@@ -81,7 +81,7 @@ Route::post('/contact', [ContactController::class, 'submit'])->name('contact.sub
 Route::get('/community', function () {
     $cmsPage = \App\Models\CmsPage::where('slug', 'community')->where('is_active', true)->with('sections')->first();
     return view('pages.community', compact('cmsPage'));
-});
+})->name('community');
 
 // Newsletter
 Route::post('/newsletter/subscribe', [\App\Http\Controllers\NewsletterController::class, 'subscribe'])->name('newsletter.subscribe');
