@@ -2,11 +2,11 @@
 
 namespace Database\Factories;
 
-use App\Models\Accommodation;
+use App\Models\Accomodation;
 use App\Models\ParkLocation;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
-class AccommodationFactory extends Factory
+class AccomodationFactory extends Factory
 {
     protected $model = Accommodation::class;
 

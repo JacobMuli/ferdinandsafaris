@@ -6,7 +6,7 @@
     "keywords": ["laravel", "framework"],
     "license": "proprietary",
     "require": {
-        "php": "^8.2",
+        "php": ">=8.2",
         "laravel/fortify": "^1.33",
         "laravel/framework": "^12.0",
         "laravel/reverb": "^1.0",
