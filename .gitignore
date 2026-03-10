@@ -49,3 +49,4 @@ auth.json
 # Local PHP configuration
 .php_cs.cache
 .phpunit.cache
+/tests

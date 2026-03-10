@@ -247,11 +247,6 @@ Route::prefix('admin')
     });
 
 
-// =====================
-// Auth Routes (Breeze / Jetstream)
-// =====================
-require __DIR__.'/auth.php';
-
 // Social Auth
 Route::get('/auth/{provider}/redirect', [App\Http\Controllers\Auth\SocialAuthController::class, 'redirectToProvider'])
     ->name('social.redirect');

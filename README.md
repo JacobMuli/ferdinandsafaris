@@ -12,7 +12,7 @@ Ferdinand Safaris is a luxury safari booking and management platform built with 
 
 ## Prerequisites
 
-- PHP 8.2+
+- PHP 8.4+
 - Node.js & NPM
 - Composer
 - SQLite (or another supported database)
