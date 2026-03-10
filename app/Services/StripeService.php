@@ -29,7 +29,7 @@ class StripeService
                 'quantity' => 1,
             ]],
             'mode' => 'payment',
-            'success_url' => route('bookings.payment.success', $booking->booking_reference),
+            'success_url' => route('bookings.payment.success', $booking->booking_reference) . '?session_id={CHECKOUT_SESSION_ID}',
             'cancel_url' => route('bookings.payment.cancel', $booking->booking_reference),
             'customer_email' => $booking->customer->email,
             'client_reference_id' => $booking->booking_reference,
@@ -38,5 +38,10 @@ class StripeService
                 'booking_reference' => $booking->booking_reference,
             ],
         ]);
+    }
+
+    public function retrieveSession($sessionId)
+    {
+        return Session::retrieve($sessionId);
     }
 }

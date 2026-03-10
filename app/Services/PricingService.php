@@ -43,7 +43,8 @@ class PricingService
         // Let's apply tax here.
 
         $taxableAmount = $finalPrice;
-        $taxAmount = $taxableAmount * config('safaris.tax_rate', 0.16);
+        $taxRate = \App\Models\SiteSetting::get('tax_rate', 0.16);
+        $taxAmount = $taxableAmount * $taxRate;
         $totalAmount = $taxableAmount + $taxAmount;
 
         return [

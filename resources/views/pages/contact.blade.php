@@ -69,16 +69,16 @@
                         </div>
 
                         <div class="relative z-10 mt-12 flex gap-6">
-                             <a href="#" class="w-12 h-12 rounded-full border border-white/30 flex items-center justify-center hover:bg-white hover:text-emerald-700 transition">
+                             <a href="https://facebook.com/ferdinandsafaris" target="_blank" class="w-12 h-12 rounded-full border border-white/30 flex items-center justify-center hover:bg-white hover:text-emerald-700 transition">
                                 <i class="fab fa-facebook-f text-xl"></i>
                             </a>
-                             <a href="#" class="w-12 h-12 rounded-full border border-white/30 flex items-center justify-center hover:bg-white hover:text-emerald-700 transition">
+                             <a href="https://instagram.com/ferdinandsafaris" target="_blank" class="w-12 h-12 rounded-full border border-white/30 flex items-center justify-center hover:bg-white hover:text-emerald-700 transition">
                                 <i class="fab fa-instagram text-xl"></i>
                             </a>
-                            <a href="#" class="w-12 h-12 rounded-full border border-white/30 flex items-center justify-center hover:bg-white hover:text-emerald-700 transition">
+                            <a href="https://twitter.com/ferd_safaris" target="_blank" class="w-12 h-12 rounded-full border border-white/30 flex items-center justify-center hover:bg-white hover:text-emerald-700 transition">
                                 <i class="fab fa-x-twitter text-xl"></i>
                             </a>
-                            <a href="#" class="w-12 h-12 rounded-full border border-white/30 flex items-center justify-center hover:bg-white hover:text-emerald-700 transition">
+                            <a href="https://linkedin.com/company/ferdinand-safaris" target="_blank" class="w-12 h-12 rounded-full border border-white/30 flex items-center justify-center hover:bg-white hover:text-emerald-700 transition">
                                 <i class="fab fa-linkedin-in text-xl"></i>
                             </a>
                         </div>

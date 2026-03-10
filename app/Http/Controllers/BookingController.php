@@ -168,85 +168,37 @@ class BookingController extends Controller
         return view('bookings.show', compact('booking'));
     }
 
-    public function payment($bookingReference, StripeService $stripeService)
-    {
-        $booking = Booking::where('booking_reference', $bookingReference)
-            ->with(['tour', 'customer'])
-            ->firstOrFail();
-
-        // Security: Ensure booking is confirmed and has a price set by admin
-        if (!in_array($booking->status, ['confirmed']) || !$booking->actual_price) {
-            return redirect()->route('bookings.show', $bookingReference)
-                ->with('error', 'This booking is not yet ready for payment. Please wait for admin confirmation.');
-        }
-
-        try {
-            $session = $stripeService->createCheckoutSession($booking);
-            return redirect($session->url);
-        } catch (\Exception $e) {
-            \Illuminate\Support\Facades\Log::error('Stripe Integration Error: ' . $e->getMessage());
-            return back()->with('error', 'Error initiating payment: ' . $e->getMessage());
-        }
-    }
-
-    public function paymentSuccess($bookingReference)
-    {
-        $booking = Booking::where('booking_reference', $bookingReference)->firstOrFail();
-        
-        // In a real app, we'd verify with Stripe API or Webhooks
-        // For now, we'll mark as paid upon redirect (less secure but works for demo)
-        
-        DB::beginTransaction();
-        try {
-            $booking->markAsPaid();
-            $booking->customer->updateBookingStats();
-            
-            // Create payment record
-            Payment::create([
-                'booking_id' => $booking->id,
-                'transaction_id' => 'STRIPE-' . strtoupper(Str::random(12)),
-                'payment_method' => 'stripe',
-                'amount' => $booking->actual_price,
-                'currency' => config('safaris.currency', 'USD'),
-                'status' => 'completed',
-            ]);
-
-            DB::commit();
-
-            // Notify Customer
-            try {
-                Mail::to($booking->customer->email)->send(new \App\Mail\BookingConfirmed($booking));
-            } catch (\Exception $e) {
-                \Illuminate\Support\Facades\Log::error('Mail Error: ' . $e->getMessage());
-            }
-
-            return redirect()->route('bookings.show', $bookingReference)
-                ->with('success', 'Payment successful! Your adventure is confirmed.');
-        } catch (\Exception $e) {
-            DB::rollBack();
-            return redirect()->route('bookings.show', $bookingReference)
-                ->with('error', 'Error updating payment status: ' . $e->getMessage());
-        }
-    }
-
-    public function paymentCancel($bookingReference)
-    {
-        return redirect()->route('bookings.show', $bookingReference)
-            ->with('info', 'Payment was cancelled. You can try again when you are ready.');
-    }
-
     public function cancel(Request $request, $bookingReference)
     {
         $booking = Booking::where('booking_reference', $bookingReference)->firstOrFail();
 
-        if (!$booking->canBeCancelled()) {
-            return back()->withErrors(['error' => 'This booking cannot be cancelled.']);
+        // If Pending and far enough in future, allow direct cancellation
+        if ($booking->status === 'pending' && $booking->canBeCancelled()) {
+            $booking->cancel($request->cancellation_reason);
+            return redirect()->route('bookings.show', $booking->booking_reference)
+                ->with('success', 'Booking cancelled successfully.');
         }
 
-        $booking->cancel($request->cancellation_reason);
+        // Otherwise, it must be a request
+        return $this->requestAction($request, $bookingReference, 'cancellation');
+    }
+
+    public function requestAction(Request $request, $bookingReference, $type = null)
+    {
+        $booking = Booking::where('booking_reference', $bookingReference)->firstOrFail();
+        $type = $type ?? $request->input('action_type', 'modification');
+        $reason = $request->input('reason') ?? $request->input('cancellation_reason');
+
+        if (!$reason) {
+            return back()->withErrors(['reason' => 'Please provide a reason for your request.']);
+        }
+
+        // Notify Admin
+        $admins = \App\Models\User::where('is_admin', true)->get();
+        \Illuminate\Support\Facades\Notification::send($admins, new \App\Notifications\BookingActionRequest($booking, $type, $reason));
 
         return redirect()->route('bookings.show', $booking->booking_reference)
-            ->with('success', 'Booking cancelled successfully.');
+            ->with('success', 'Your ' . $type . ' request has been sent to our team. We will contact you shortly.');
     }
 
     public function myBookings()

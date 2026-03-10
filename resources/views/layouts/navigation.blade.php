@@ -113,6 +113,12 @@
                                 <x-dropdown-link href="{{ route('my-bookings') }}">
                                     {{ __('My Bookings') }}
                                 </x-dropdown-link>
+                                <x-dropdown-link href="{{ route('wishlist') }}">
+                                    {{ __('My Wishlist') }}
+                                </x-dropdown-link>
+                                <x-dropdown-link href="{{ route('reviews.index') }}">
+                                    {{ __('My Reviews') }}
+                                </x-dropdown-link>
                                 <x-dropdown-link href="{{ route('chat.index') }}">
                                     {{ __('Support Chat') }}
                                 </x-dropdown-link>
@@ -209,6 +215,14 @@
                         </div>
                         <x-responsive-nav-link href="{{ route('my-bookings') }}" :active="request()->routeIs('my-bookings')">
                             <i class="fas fa-calendar-check mr-2"></i>{{ __('My Bookings') }}
+                        </x-responsive-nav-link>
+
+                        <x-responsive-nav-link href="{{ route('wishlist') }}" :active="request()->routeIs('wishlist')">
+                            <i class="fas fa-heart mr-2"></i>{{ __('My Wishlist') }}
+                        </x-responsive-nav-link>
+
+                        <x-responsive-nav-link href="{{ route('reviews.index') }}" :active="request()->routeIs('reviews.index')">
+                            <i class="fas fa-star mr-2"></i>{{ __('My Reviews') }}
                         </x-responsive-nav-link>
 
                         <x-responsive-nav-link href="{{ route('chat.index') }}" :active="request()->routeIs('chat.*')">

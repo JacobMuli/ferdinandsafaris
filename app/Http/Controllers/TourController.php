@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Tour;
+use App\Models\TourLike;
 use Illuminate\Http\Request;
 
 class TourController extends Controller
@@ -59,7 +60,10 @@ class TourController extends Controller
                 $query->orderBy('duration_days', 'asc');
                 break;
             default: // popular
-                $query->orderBy('views', 'desc')->orderBy('rating', 'desc');
+                $query->withCount('likes')
+                    ->orderBy('likes_count', 'desc')
+                    ->orderBy('views', 'desc')
+                    ->orderBy('rating', 'desc');
         }
 
         $tours = $query->paginate(12);

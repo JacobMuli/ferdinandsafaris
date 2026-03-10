@@ -16,6 +16,7 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias([
             'admin' => AdminMiddleware::class,
+            'guide' => \App\Http\Middleware\GuideMiddleware::class,
             'profile.complete' => \App\Http\Middleware\EnsureProfileComplete::class,
         ]);
     })

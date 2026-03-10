@@ -8,10 +8,13 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 use Laravel\Fortify\TwoFactorAuthenticatable;
+use Spatie\Permission\Traits\HasRoles;
+
+use App\Traits\LogsActivity;
 
 class User extends Authenticatable implements MustVerifyEmail
 {
-    use HasApiTokens, HasFactory, Notifiable, TwoFactorAuthenticatable;
+    use HasApiTokens, HasFactory, Notifiable, TwoFactorAuthenticatable, HasRoles, LogsActivity;
 
     protected $fillable = [
         'name',
@@ -47,11 +50,11 @@ class User extends Authenticatable implements MustVerifyEmail
 
     public function isAdmin()
     {
-        return $this->is_admin === true;
+        return $this->hasRole('admin') || $this->hasRole('super-admin') || $this->is_admin === true;
     }
 
     public function isSuperAdmin()
     {
-        return $this->is_super_admin === true;
+        return $this->hasRole('super-admin') || $this->is_super_admin === true;
     }
 }

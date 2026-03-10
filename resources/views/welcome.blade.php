@@ -279,13 +279,16 @@
                                         </div>
                                         <div class="flex items-center justify-between">
                                             <div>
-                                                <span
-                                                    class="text-2xl font-bold text-gray-900 ">${{ number_format($tour->price_per_person) }}</span>
-                                                <span class="text-gray-500  text-xs">/person</span>
+                                                @if(\App\Models\SiteSetting::get('show_public_pricing', true))
+                                                    <span class="text-2xl font-bold text-gray-900 ">${{ number_format($tour->price_per_person) }}</span>
+                                                    <span class="text-gray-500  text-xs">/person</span>
+                                                @else
+                                                    <span class="text-sm font-semibold text-emerald-600">Contact for Pricing</span>
+                                                @endif
                                             </div>
                                             <a href="{{ route('tours.show', $tour) }}"
                                                 class="bg-emerald-600 text-white px-6 py-2 rounded-full hover:bg-emerald-700 transition shadow-md hover:shadow-lg transform active:scale-95 duration-200">
-                                                Book Now
+                                                View Details
                                             </a>
                                         </div>
                                     </div>
@@ -495,6 +498,80 @@
         </style>
     </section>
 
+
+    <!-- FAQ Section -->
+    <section class="py-24 bg-gray-50">
+        <div class="w-full px-4 md:px-12 max-w-4xl mx-auto">
+            <h2 class="text-3xl font-bold text-gray-900 mb-12 text-center underline decoration-emerald-500 decoration-4 underline-offset-8">Frequently Asked Questions</h2>
+            
+            <div x-data="{ active: null }" class="space-y-4">
+                <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                    <button @click="active = active === 0 ? null : 0" class="w-full px-6 py-4 text-left flex justify-between items-center hover:bg-gray-50 transition">
+                        <span class="font-semibold text-gray-900">What is the best time to visit East Africa for a safari?</span>
+                        <i :class="active === 0 ? 'fa-minus' : 'fa-plus'" class="fas text-emerald-600"></i>
+                    </button>
+                    <div x-show="active === 0" x-collapse class="px-6 py-4 text-gray-600 border-t border-gray-50">
+                        The best time is during the dry season from June to October, which also coincides with the Great Migration in the Serengeti and Masai Mara.
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                    <button @click="active = active === 1 ? null : 1" class="w-full px-6 py-4 text-left flex justify-between items-center hover:bg-gray-50 transition">
+                        <span class="font-semibold text-gray-900">What should I pack for my safari trip?</span>
+                        <i :class="active === 1 ? 'fa-minus' : 'fa-plus'" class="fas text-emerald-600"></i>
+                    </button>
+                    <div x-show="active === 1" x-collapse class="px-6 py-4 text-gray-600 border-t border-gray-50">
+                        Pack light, breathable clothing in neutral colors (khaki, olive, tan). Don't forget a warm jacket for morning drives, a hat, sunscreen, and good binoculars.
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                    <button @click="active = active === 2 ? null : 2" class="w-full px-6 py-4 text-left flex justify-between items-center hover:bg-gray-50 transition">
+                        <span class="font-semibold text-gray-900">Do I need vaccinations before traveling?</span>
+                        <i :class="active === 2 ? 'fa-minus' : 'fa-plus'" class="fas text-emerald-600"></i>
+                    </button>
+                    <div x-show="active === 2" x-collapse class="px-6 py-4 text-gray-600 border-t border-gray-50">
+                        Yes, typically Yellow Fever, Typhoid, and Hepatitis A/B are recommended. Malaria prophylaxis is also essential. Please consult your travel clinic 6-8 weeks before departure.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Newsletter Section -->
+    <section class="py-24 relative overflow-hidden bg-emerald-900">
+        <div class="absolute inset-0 pattern-grid-lg opacity-10"></div>
+        <div class="w-full px-4 md:px-12 relative z-10 text-center">
+            <div class="max-w-3xl mx-auto bg-white/10 backdrop-blur-md p-12 rounded-3xl border border-white/20">
+                <h2 class="text-4xl font-bold text-white mb-4">Join the Adventure</h2>
+                <p class="text-emerald-100 mb-8 text-lg">Subscribe to our newsletter for exclusive safari tips, wildlife updates, and limited-time offers.</p>
+                
+                <form id="newsletterForm" class="flex flex-col md:flex-row gap-4 max-w-xl mx-auto">
+                    <input type="email" id="newsletterEmail" placeholder="Enter your email address" required
+                        class="flex-1 px-6 py-4 rounded-full bg-white/20 border border-white/30 text-white placeholder-emerald-200 focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                    <button type="submit" class="bg-white text-emerald-800 px-8 py-4 rounded-full font-bold hover:bg-emerald-50 transition transform hover:scale-105 active:scale-95">
+                        Subscribe Now
+                    </button>
+                </form>
+                <div id="newsletterMessage" class="mt-4 text-sm font-medium hidden"></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Trust Symbols Section -->
+    <section class="py-12 border-b border-gray-100 bg-white">
+        <div class="w-full px-4 md:px-12">
+            <div class="flex flex-wrap justify-center items-center gap-12 opacity-50 grayscale hover:grayscale-0 transition-all duration-500">
+                <img src="https://www.katokenya.org/images/logo.png" alt="KATO" class="h-12 object-contain">
+                <img src="https://atta.travel/app/themes/atta/dist/images/atta-logo.svg" alt="ATTA" class="h-12 object-contain">
+                <img src="https://www.ktb.go.ke/templates/ktb/images/logo.png" alt="Magical Kenya" class="h-12 object-contain">
+                <div class="flex items-center gap-2 border-l border-gray-300 pl-12">
+                    <i class="fas fa-certificate text-emerald-600 text-2xl"></i>
+                    <span class="font-bold text-gray-800 text-lg">Licensed Safari Tour Operator</span>
+                </div>
+            </div>
+        </div>
+    </section>
 
     <!-- CTA Section -->
     <section class="bg-emerald-600 py-20">

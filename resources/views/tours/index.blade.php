@@ -83,27 +83,45 @@
                                 </div>
 
                                 <!-- Min Days -->
-                                <div>
+                                <div class="w-32">
+                                    <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1 shadow-sm">Min Days</label>
                                     <input
                                         type="number"
                                         name="duration_min"
                                         value="{{ request('duration_min') }}"
-                                        placeholder="Min days"
+                                        placeholder="Min"
                                         @input="autoSubmit"
-                                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition"
+                                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition text-sm"
                                     >
                                 </div>
 
                                 <!-- Max Days -->
-                                <div>
+                                <div class="w-32">
+                                    <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1 shadow-sm">Max Days</label>
                                     <input
                                         type="number"
                                         name="duration_max"
                                         value="{{ request('duration_max') }}"
-                                        placeholder="Max days"
+                                        placeholder="Max"
                                         @input="autoSubmit"
-                                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition"
+                                        class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition text-sm"
                                     >
+                                </div>
+
+                                <!-- Price Range (Disabled per owner request) -->
+                                <div class="opacity-40 cursor-not-allowed w-40">
+                                    <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Price Range</label>
+                                    <select disabled class="w-full px-4 py-2 border border-gray-200 bg-gray-50 rounded-lg text-sm italic">
+                                        <option>Coming Soon</option>
+                                    </select>
+                                </div>
+
+                                <!-- Level (Disabled per owner request) -->
+                                <div class="opacity-40 cursor-not-allowed w-32">
+                                    <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Level</label>
+                                    <select disabled class="w-full px-4 py-2 border border-gray-200 bg-gray-50 rounded-lg text-sm italic">
+                                        <option>Any</option>
+                                    </select>
                                 </div>
                             </div>
                         </form>

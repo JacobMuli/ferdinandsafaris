@@ -4,18 +4,29 @@
 
     <!-- LEFT -->
     <div class="flex items-center gap-4">
+        <!-- Desktop Toggle -->
+        <button
+            @click="desktopSidebarOpen = !desktopSidebarOpen"
+            class="hidden md:flex p-2 rounded-lg text-white hover:bg-white/10 focus:outline-none transition-colors"
+            title="Toggle Sidebar">
+            <i class="fas fa-bars text-xl"></i>
+        </button>
+
         <!-- Mobile Toggle -->
         <button
             @click="sidebarOpen = !sidebarOpen"
             class="md:hidden p-2 rounded-lg
                    text-white hover:bg-white/10
-                   focus:outline-none focus:ring-2 focus:ring-white/30">
+                   focus:outline-none">
             <i class="fas fa-bars text-xl"></i>
         </button>
 
-        <h2 class="text-lg font-semibold text-white uppercase tracking-wide">
-            @yield('title', 'Admin Dashboard')
-        </h2>
+        <div class="flex items-center gap-3">
+            <img src="/images/icon-192.png" alt="Logo" class="h-8 w-8 rounded shadow-sm">
+            <h2 class="text-lg font-bold text-white uppercase tracking-tight hidden sm:block">
+                Ferdinand <span class="font-light">Safaris</span>
+            </h2>
+        </div>
     </div>
 
     <!-- RIGHT -->

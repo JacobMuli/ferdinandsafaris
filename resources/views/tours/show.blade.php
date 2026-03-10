@@ -1,4 +1,14 @@
 <x-guest-layout>
+    @push('meta')
+        <title>{{ $tour->name }} - Ferdinand Safaris</title>
+        <meta name="description" content="{{ Str::limit($tour->description, 160) }}">
+        <meta property="og:title" content="{{ $tour->name }} | Ferdinand Safaris">
+        <meta property="og:description" content="{{ Str::limit($tour->description, 160) }}">
+        <meta property="og:image" content="{{ $tour->featured_image }}">
+        <meta property="og:url" content="{{ url()->current() }}">
+        <meta property="og:type" content="website">
+        <meta name="twitter:card" content="summary_large_image">
+    @endpush
     <!-- Tour Header & Gallery -->
     <div class="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-10" 
          x-data="{ 
@@ -326,32 +336,56 @@
             <!-- Right Column: Sticky Booking Card -->
             <div class="lg:col-span-1">
                 <div class="sticky top-24 space-y-6">
+                    <!-- Pricing Information (Conditional) -->
+                    @if(\App\Models\SiteSetting::get('show_public_pricing', false))
+                    <div class="bg-emerald-900 rounded-2xl p-8 mb-6 text-white shadow-xl shadow-emerald-900/20 relative overflow-hidden">
+                        <div class="absolute top-0 right-0 -mr-8 -mt-8 w-32 h-32 bg-white/10 rounded-full blur-2xl"></div>
+                        <div class="relative z-10">
+                            <div class="flex items-center gap-2 text-emerald-300 text-[10px] font-black uppercase tracking-widest mb-2">
+                                <i class="fas fa-tag"></i> Starting From
+                            </div>
+                            <div class="flex items-baseline gap-2">
+                                <span class="text-4xl font-black">{{ config('safaris.currency', 'USD') }} {{ number_format($tour->price_per_person) }}</span>
+                                <span class="text-emerald-300/80 text-xs font-bold">/ person</span>
+                            </div>
+                            <p class="text-emerald-200/60 text-[10px] mt-4 font-medium italic border-t border-white/10 pt-4">
+                                * Final price depends on season, group size, and vehicle choice.
+                            </p>
+                        </div>
+                    </div>
+                    @endif
+
                     <div
-                        class="bg-white rounded-2xl shadow-xl shadow-gray-200/50 border border-gray-100 overflow-hidden transform transition hover:-translate-y-1 duration-300">
+                        class="bg-white rounded-3xl shadow-2xl shadow-gray-200/50 border border-gray-100 overflow-hidden transform transition hover:-translate-y-1 duration-300">
                         <div class="p-8">
-                            <div class="mb-4">
-                                <h3 class="text-xl font-bold text-gray-900">Book Your Adventure</h3>
-                                <p class="text-sm text-gray-500">Secure your spot today</p>
+                            <div class="mb-8">
+                                <h3 class="text-2xl font-black text-gray-900 tracking-tight">Check Availability</h3>
+                                <p class="text-[10px] text-gray-400 uppercase font-black tracking-widest mt-1">Select your preferred date</p>
                             </div>
 
-                            <div class="space-y-4">
-                                <a href="{{ route('bookings.create', $tour) }}"
-                                    class="block w-full bg-emerald-600 hover:bg-emerald-700 text-white text-center py-4 rounded-xl font-bold transition-all shadow-lg shadow-emerald-200">
-                                    Book This Tour
-                                </a>
+                            <div class="space-y-6">
+                                <form action="{{ route('bookings.create', $tour) }}" method="GET">
+                                    <div class="mb-6">
+                                        <label class="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 ml-1">Proposed Start Date</label>
+                                        <input type="date" name="date" required min="{{ date('Y-m-d', strtotime('+1 day')) }}"
+                                               class="w-full px-5 py-4 rounded-2xl bg-gray-50 border-0 focus:ring-2 focus:ring-emerald-500 outline-none transition font-bold text-gray-700 shadow-inner">
+                                    </div>
+                                    <button type="submit"
+                                        class="block w-full bg-emerald-600 hover:bg-emerald-700 text-white text-center py-5 rounded-2xl font-black uppercase tracking-[0.2em] text-[11px] transition-all shadow-xl shadow-emerald-200/50 active:scale-95">
+                                        Book This Adventure
+                                    </button>
+                                </form>
 
-                                <button
-                                    class="block w-full bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 text-center py-3 rounded-xl font-bold transition">
-                                    <i class="fas fa-question-circle mr-2"></i> Make an Inquiry
-                                </button>
+                                <a href="{{ route('contact') }}"
+                                    class="block w-full bg-white border border-gray-100 text-gray-700 hover:bg-gray-50 text-center py-4 rounded-2xl font-black uppercase tracking-[0.2em] text-[10px] transition active:scale-95 shadow-sm">
+                                    <i class="fas fa-envelope mr-2 text-emerald-500"></i> Request Information
+                                </a>
                             </div>
                         </div>
                         <div
-                            class="bg-gray-50 p-4 text-center text-xs text-gray-500 border-t border-gray-100 flex justify-center gap-4">
-                            <span class="flex items-center"><i class="fas fa-lock mr-1.5 opacity-50"></i> Secure
-                                Payment</span>
-                            <span class="flex items-center"><i class="fas fa-check mr-1.5 opacity-50"></i> Best Price
-                                Guarantee</span>
+                            class="bg-gray-50/80 p-6 text-center text-[9px] text-gray-400 font-black uppercase tracking-widest border-t border-gray-100 flex justify-center gap-8">
+                            <span class="flex items-center"><i class="fas fa-shield-alt mr-2 text-emerald-500/50 text-xs"></i> Secure</span>
+                            <span class="flex items-center"><i class="fas fa-user-check mr-2 text-emerald-500/50 text-xs"></i> Expert Led</span>
                         </div>
                     </div>
 

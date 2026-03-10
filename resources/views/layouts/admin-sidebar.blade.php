@@ -1,20 +1,4 @@
-<!-- Sidebar Component -->
-<aside
-    :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full'"
-    class="fixed top-0 left-0 z-40 h-screen w-64
-           bg-gradient-to-b from-blue-900 to-emerald-900 text-white
-           transition-transform duration-300
-           md:translate-x-0 md:static md:flex md:flex-col
-           overflow-y-auto"
->
-    <!-- Mobile Header -->
-    <div class="flex items-center justify-between px-4 py-3 bg-blue-900 md:hidden">
-        <span class="font-bold text-lg">Menu</span>
-        <button @click="sidebarOpen = false" class="text-white">
-            <i class="fas fa-times text-xl"></i>
-        </button>
-    </div>
-
+<div class="flex flex-col h-full">
     <!-- Navigation -->
     @php
         $activeGroup = null;
@@ -149,6 +133,16 @@
                 :href="route('admin.security.index')"
                 :active="request()->routeIs('admin.security.*')"
                 label="Security"
+            />
+            <x-admin-nav-link
+                :href="route('admin.newsletter.index')"
+                :active="request()->routeIs('admin.newsletter.*')"
+                label="Newsletter Subs"
+            />
+            <x-admin-nav-link
+                :href="route('admin.community-stories.index')"
+                :active="request()->routeIs('admin.community-stories.*')"
+                label="Guest Stories"
             />
         </x-admin-nav-group>
 

@@ -68,7 +68,7 @@ class PaymentTest extends TestCase
     {
         $this->actingAs($this->user);
 
-        $response = $this->get(route('bookings.payment', $this->booking->booking_reference));
+        $response = $this->get(route('bookings.payment.init', $this->booking->booking_reference));
 
         $response->assertRedirect(route('bookings.show', $this->booking->booking_reference));
         $response->assertSessionHas('error');
@@ -94,7 +94,7 @@ class PaymentTest extends TestCase
             })
         );
 
-        $response = $this->get(route('bookings.payment', $this->booking->booking_reference));
+        $response = $this->get(route('bookings.payment.init', $this->booking->booking_reference));
 
         $response->assertRedirect('https://checkout.stripe.com/test');
     }
@@ -108,7 +108,23 @@ class PaymentTest extends TestCase
             'actual_price' => 1200
         ]);
 
-        $response = $this->get(route('bookings.payment.success', $this->booking->booking_reference));
+        // Mock Stripe Service for retrieval
+        $this->instance(
+            StripeService::class,
+            Mockery::mock(StripeService::class, function (MockInterface $mock) {
+                $mock->shouldReceive('retrieveSession')
+                    ->once()
+                    ->andReturn((object)[
+                        'payment_status' => 'paid',
+                        'client_reference_id' => $this->booking->booking_reference
+                    ]);
+            })
+        );
+
+        $response = $this->get(route('bookings.payment.success', [
+            'bookingReference' => $this->booking->booking_reference,
+            'session_id' => 'test_session_id'
+        ]));
 
         $response->assertRedirect(route('bookings.show', $this->booking->booking_reference));
         $response->assertSessionHas('success');

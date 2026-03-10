@@ -7,9 +7,13 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Str;
 
+use App\Traits\LogsActivity;
+use App\Traits\TourAttributes;
+use App\Services\TourPricingService;
+
 class Tour extends Model
 {
-    use HasFactory, SoftDeletes;
+    use HasFactory, SoftDeletes, LogsActivity, TourAttributes;
 
     protected $fillable = [
         'name',
@@ -89,9 +93,28 @@ class Tour extends Model
         return $this->hasMany(Review::class);
     }
 
+    public function likes()
+    {
+        return $this->hasMany(TourLike::class);
+    }
+
     public function approvedReviews()
     {
         return $this->hasMany(Review::class)->where('is_approved', true);
+    }
+
+    public function accommodations()
+    {
+        return $this->belongsToMany(Accommodation::class, 'tour_accommodations')
+            ->withPivot('night_number', 'nights', 'room_type', 'board_basis', 'price_per_night', 'included_in_tour_price', 'notes', 'display_order')
+            ->withTimestamps();
+    }
+
+    public function parkLocations()
+    {
+        return $this->belongsToMany(ParkLocation::class, 'park_location_tour')
+            ->withPivot('day_number', 'duration_hours', 'days', 'is_primary_location')
+            ->withTimestamps();
     }
 
     // Scopes
@@ -156,101 +179,7 @@ class Tour extends Model
 
     public function calculatePrice($customerType, $adultsCount, $childrenCount = 0, $options = [])
     {
-        // 1. Base Tour Cost (Service/Guide/margin)
-        $basePrice = $adultsCount * $this->price_per_person;
-        if ($childrenCount > 0 && $this->child_price) {
-            $basePrice += $childrenCount * $this->child_price;
-        }
-
-        $breakdown = [
-            'base_tour_cost' => $basePrice,
-            'accommodation_cost' => 0,
-            'vehicle_cost' => 0,
-            'park_fees' => 0,
-            'discount' => 0,
-        ];
-
-        $durationDays = $this->duration_days;
-
-        // 2. Accommodation Cost
-        if (!empty($options['accommodation_id'])) {
-            $accommodation = $this->accommodations()->find($options['accommodation_id']);
-            if (!$accommodation) {
-                 // Fallback to finding directly if not in pivot yet (unlikely if strictly filtered, but safe)
-                 $accommodation = \App\Models\Accommodation::find($options['accommodation_id']);
-            }
-
-            if ($accommodation) {
-                // Determine price per night (Pivot override or Model standard)
-                // Assuming Standard Season price for now
-                $pppn = $accommodation->pivot->price_per_night ?? $accommodation->price_per_night_standard;
-
-                // Logic: Per Person Per Night * Nights * Participants
-                // "Per Person Sharing" usually implies the standard rate.
-                // Single supplement would be extra, but let's stick to standard calculation first.
-                $nights = $accommodation->pivot->nights ?? ($durationDays - 1); // Fallback to duration-1
-                if ($nights < 1) $nights = 1;
-
-                $accomCost = ($pppn * $nights * ($adultsCount + $childrenCount));
-                // Note: Real world might have child rates for accommodation.
-
-                $breakdown['accommodation_cost'] = $accomCost;
-                $basePrice += $accomCost;
-            }
-        }
-
-        // 3. Vehicle Cost
-        if (!empty($options['vehicle_type_id'])) {
-            $vehicleType = \App\Models\VehicleType::find($options['vehicle_type_id']);
-            if ($vehicleType) {
-                // Vehicle price is per day, split by group OR added to total?
-                // Usually Vehicle is a fixed cost divided by group, OR added to the quote.
-                // Since this returns TOTAL price for the booking:
-                $vehicleCost = $vehicleType->base_daily_rate * $durationDays;
-
-                $breakdown['vehicle_cost'] = $vehicleCost;
-                $basePrice += $vehicleCost;
-            }
-        }
-
-        // 4. Park Fees
-        $residentStatus = $options['resident_status'] ?? 'non_resident'; // resident, non_resident, citizen
-        // Sum up fees for all park locations linked to tour
-        $parkFees = 0;
-        foreach ($this->parkLocations as $park) {
-            // Check if resident fees apply (Note: current DB might only have one fee column, need to check ParkLocation model)
-            // ParkLocation model has `entry_fee_adult` and `entry_fee_child`.
-            // Often these are Non-Resident by default. Resident fees might differ.
-            // For now, use the standard fields.
-            $daysInPark = $park->pivot->days ?? 1; // Default to 1 day per park if not specified
-
-            $adultFee = $park->entry_fee_adult * $daysInPark * $adultsCount;
-            $childFee = $park->entry_fee_child * $daysInPark * $childrenCount;
-
-            $parkFees += ($adultFee + $childFee);
-        }
-        $breakdown['park_fees'] = $parkFees;
-        $basePrice += $parkFees;
-
-
-        // 5. Discounts
-        $totalParticipants = $adultsCount + $childrenCount;
-        $discount = 0;
-
-        if ($customerType === 'group' && $totalParticipants >= $this->min_group_size) {
-            $discount = $basePrice * ($this->group_discount_percentage / 100);
-        } elseif ($customerType === 'corporate') {
-            $discount = $basePrice * ($this->corporate_discount_percentage / 100);
-        }
-
-        $breakdown['discount'] = $discount;
-
-        return [
-            'base_price' => $basePrice, // This is actually Total before discount now
-            'discount' => $discount,
-            'final_price' => $basePrice - $discount,
-            'breakdown' => $breakdown
-        ];
+        return app(TourPricingService::class)->calculate($this, $customerType, $adultsCount, $childrenCount, $options);
     }
 
     public function getAvailableSpots($date)
@@ -279,75 +208,6 @@ class Tour extends Model
             'reviews_count' => $stats->total,
         ]);
     }
-
-    public function accommodations()
-    {
-        return $this->belongsToMany(Accommodation::class, 'tour_accommodations')
-            ->withPivot('night_number', 'nights', 'room_type', 'board_basis', 'price_per_night', 'included_in_tour_price', 'notes', 'display_order')
-            ->withTimestamps();
-    }
-
-    public function parkLocations()
-    {
-        return $this->belongsToMany(ParkLocation::class, 'park_location_tour')
-            ->withPivot('day_number', 'duration_hours', 'days', 'is_primary_location')
-            ->withTimestamps();
-    }
-
-    public function getDisplayImageAttribute()
-    {
-        // 1. Tour's own featured image
-        if ($this->featured_image) {
-             $image = trim($this->featured_image);
-             if (Str::startsWith($image, ['http://', 'https://'])) {
-                 return $image;
-             }
-             return \Illuminate\Support\Facades\Storage::url($image);
-        }
-
-        // 2. Fallback to primary/first Park Location image
-        // Ensure parkLocations are loaded or fetch first
-        $location = $this->parkLocations->first();
-        if ($location && $location->featured_image_url) {
-            return $location->featured_image_url;
-        }
-
-        // 3. Last resort placeholder
-        return 'https://images.unsplash.com/photo-1516426122078-c23e76319801?w=800';
-    }
-
-    public function getGalleryImagesAttribute($value)
-    {
-        if (is_string($value)) {
-            $value = json_decode($value, true);
-        }
-
-        if (!is_array($value)) {
-            return [];
-        }
-
-        // Clean whitespace from all URLs in the gallery
-        return array_map('trim', $value);
-    }
-
-    public function getFormattedItineraryAttribute()
-    {
-        // If it's already an array, return it (sorted by day if keys are numeric/day numbers)
-        if (is_array($this->itinerary)) {
-            // Ensure it's sorted by day if the keys are day numbers, or just return as is
-            return $this->itinerary;
-        }
-
-        // If it's a string (legacy data), try to format it as a single day or raw text
-        if (is_string($this->itinerary) && !empty($this->itinerary)) {
-            return [
-                ['day' => 1, 'title' => 'Tour Itinerary', 'description' => $this->itinerary]
-            ];
-        }
-
-        return [];
-    }
-
 
     public function getRouteKeyName()
     {

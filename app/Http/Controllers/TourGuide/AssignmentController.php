@@ -17,6 +17,40 @@ class AssignmentController extends Controller
     }
 
     /**
+     * Guide Dashboard
+     */
+    public function dashboard()
+    {
+        $guide = auth()->user()->tourGuide;
+        $upcomingAssignments = $guide->acceptedAssignments()
+            ->with(['booking.tour'])
+            ->whereHas('booking', function ($q) {
+                $q->where('tour_date', '>=', now());
+            })
+            ->orderBy('id', 'desc')
+            ->get();
+
+        $pendingAssignments = $guide->pendingAssignments()
+            ->with(['booking.tour'])
+            ->get();
+
+        return view('tour-guide.dashboard', compact('guide', 'upcomingAssignments', 'pendingAssignments'));
+    }
+
+    /**
+     * List all assignments
+     */
+    public function index()
+    {
+        $assignments = auth()->user()->tourGuide->assignments()
+            ->with(['booking.tour'])
+            ->orderBy('id', 'desc')
+            ->paginate(15);
+
+        return view('tour-guide.assignments-index', compact('assignments'));
+    }
+
+    /**
      * Show assignment details
      */
     public function show(Request $request, TourGuideAssignment $assignment)

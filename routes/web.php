@@ -3,58 +3,71 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\TourController;
 use App\Http\Controllers\BookingController;
+use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\ProfileController;
-use App\Http\Controllers\Controller;
+use App\Http\Controllers\ContactController;
+use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\ActivityLogController;
+use App\Http\Controllers\WishlistController;
+use App\Http\Controllers\SupportChatController;
+use App\Http\Controllers\Auth\SocialAuthController;
 use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
 use App\Http\Controllers\Admin\TourController as AdminTourController;
 use App\Http\Controllers\Admin\BookingController as AdminBookingController;
-use App\Http\Controllers\ContactController;
-// use App\Http\Controllers\PaymentController; // Removed
+use App\Http\Controllers\Admin\TourGuideController as AdminTourGuideController;
+use App\Http\Controllers\Admin\ParkLocationController as AdminParkLocationController;
+use App\Http\Controllers\Admin\ReviewController as AdminReviewController;
+use App\Http\Controllers\Admin\TestimonialController as AdminTestimonialController;
+use App\Http\Controllers\Admin\AccommodationController as AdminAccommodationController;
+use App\Http\Controllers\Admin\VehicleTypeController as AdminVehicleTypeController;
+use App\Http\Controllers\Admin\VehicleController as AdminVehicleController;
+use App\Http\Controllers\Admin\UserController as AdminUserController;
+use App\Http\Controllers\Admin\CmsPageController;
+use App\Http\Controllers\Admin\CmsSectionController;
+use App\Http\Controllers\Admin\MessageController;
+use App\Http\Controllers\Admin\BillingController;
+use App\Http\Controllers\Admin\SecurityController;
+use App\Http\Controllers\Admin\SettingsController;
+use App\Http\Controllers\TourGuide\AssignmentController as GuideAssignmentController;
 
 /*
 |--------------------------------------------------------------------------
-| Web Routes
+| Web Routes - Ferdinand Safaris
 |--------------------------------------------------------------------------
+| This file is organized by domain: Public Pages, Tours, Bookings, 
+| Payments, Customer Account, Admin Panel, and Guide Portal.
 */
 
-// Home
+// =========================================================================
+// 1. PUBLIC PAGES & STATIC CONTENT
+// =========================================================================
 Route::get('/', function () {
     $cmsPage = \App\Models\CmsPage::where('slug', 'home')->where('is_active', true)->with('sections')->first();
-    
-    // Fallback data if CMS not seeded or active
     $hero = $cmsPage?->sections->where('section_key', 'hero')->first()?->content ?? [
         'heading' => "Discover Africa's Wonders",
         'subheading' => "Experience unforgettable safari adventures with expert guides and luxury accommodations",
         'bg_image' => "https://images.unsplash.com/photo-1516426122078-c23e76319801"
     ];
-
     $stats = $cmsPage?->sections->where('section_key', 'stats')->first()?->content['items'] ?? [
         ['value' => '500+', 'label' => 'Happy Travelers'],
         ['value' => '50+', 'label' => 'Unique Tours'],
         ['value' => '15+', 'label' => 'Years Experience'],
         ['value' => '4.9', 'label' => 'Average Rating'],
     ];
-
-    $featuredTours = \App\Models\Tour::where('is_featured', true)->latest()->take(6)->get();
-    $testimonials = \App\Models\Testimonial::where('is_featured', true)
-        ->where('is_approved', true)
+    $featuredTours = \App\Models\Tour::where('is_featured', true)
+        ->withCount('likes')
+        ->orderBy('likes_count', 'desc')
+        ->orderBy('views', 'desc')
         ->latest()
-        ->take(10)
+        ->take(6)
         ->get();
-
-    // Top Destinations for Grid
-    $topDestinations = \App\Models\ParkLocation::where('is_active', true)
-        ->orderBy('is_featured', 'desc')
-        ->orderBy('popularity_rank', 'desc')
-        ->take(12)
-        ->get();
-        
+    $testimonials = \App\Models\Testimonial::where('is_featured', true)->where('is_approved', true)->latest()->take(10)->get();
+    $topDestinations = \App\Models\ParkLocation::where('is_active', true)->orderBy('is_featured', 'desc')->orderBy('popularity_rank', 'desc')->take(12)->get();
     return view('welcome', compact('featuredTours', 'testimonials', 'cmsPage', 'hero', 'stats', 'topDestinations'));
 })->name('home');
 
 Route::get('/about', function () {
     $cmsPage = \App\Models\CmsPage::where('slug', 'about')->where('is_active', true)->with('sections')->first();
-    // Fallback? The views should handle nulls or sections finding.
     return view('pages.about', compact('cmsPage'));
 })->name('about');
 
@@ -68,187 +81,180 @@ Route::post('/contact', [ContactController::class, 'submit'])->name('contact.sub
 Route::get('/community', function () {
     $cmsPage = \App\Models\CmsPage::where('slug', 'community')->where('is_active', true)->with('sections')->first();
     return view('pages.community', compact('cmsPage'));
-})->name('community');
+});
+
+// Newsletter
+Route::post('/newsletter/subscribe', [\App\Http\Controllers\NewsletterController::class, 'subscribe'])->name('newsletter.subscribe');
+
+// Community Stories
+Route::post('/community/stories', [\App\Http\Controllers\CommunityStoryController::class, 'store'])->middleware('auth')->name('community.stories.store');
+
+// Social Auth Callback
+Route::get('/auth/{provider}/redirect', [SocialAuthController::class, 'redirectToProvider'])->name('social.redirect');
+Route::get('/auth/{provider}/callback', [SocialAuthController::class, 'handleProviderCallback'])->name('social.callback');
 
 
-// =====================
-// Public Tour Routes
-// =====================
-Route::get('/tours', [TourController::class, 'index'])->name('tours.index');
-Route::get('/tours/featured', [TourController::class, 'featured'])->name('tours.featured');
-Route::get('/tours/category/{category}', [TourController::class, 'category'])->name('tours.category');
-Route::get('/tours/{tour}', [TourController::class, 'show'])->name('tours.show');
-
-Route::post('/tours/{tour}/check-availability', [TourController::class, 'checkAvailability'])
-    ->name('tours.check-availability');
-
-Route::post('/tours/{tour}/calculate-price', [TourController::class, 'calculatePrice'])
-    ->name('tours.calculate-price');
-
-
-// =====================
-// Booking Routes (Guest + Auth)
-// =====================
-Route::get('/tours/{tour}/book', [BookingController::class, 'create'])
-    ->name('bookings.create');
-
-Route::post('/bookings', [BookingController::class, 'store'])
-    ->name('bookings.store')->middleware(['throttle:bookings']);
-
-Route::get('/bookings/{bookingReference}', [BookingController::class, 'show'])
-    ->name('bookings.show');
-
-Route::get('/bookings/{bookingReference}/payment', [BookingController::class, 'payment'])
-    ->name('bookings.payment');
-Route::get('/bookings/{bookingReference}/payment/success', [BookingController::class, 'paymentSuccess'])
-    ->name('bookings.payment.success');
-Route::get('/bookings/{bookingReference}/payment/cancel', [BookingController::class, 'paymentCancel'])
-    ->name('bookings.payment.cancel');
-
-Route::post('/bookings/{bookingReference}/cancel', [BookingController::class, 'cancel'])
-    ->name('bookings.cancel');
-
-
-// =====================
-// Authenticated User Routes
-// =====================
-Route::middleware(['auth', 'verified', 'profile.complete'])->group(function () {
-
-    Route::get('/dashboard', [App\Http\Controllers\DashboardController::class, 'index'])->name('dashboard');
-
-    Route::get('/my-bookings', [BookingController::class, 'myBookings'])
-        ->name('my-bookings');
-
-    // Profile
-    Route::get('/profile', [ProfileController::class, 'edit'])
-        ->name('profile.edit');
-
-    Route::patch('/profile', [ProfileController::class, 'update'])
-        ->name('profile.update');
-
-    Route::patch('/profile/customer', [ProfileController::class, 'updateCustomer'])
-        ->name('profile.customer.update');
-
-    Route::delete('/profile', [ProfileController::class, 'destroy'])
-        ->name('profile.destroy');
-
-    // Support Chat
-    Route::get('/chat', [App\Http\Controllers\SupportChatController::class, 'index'])->name('chat.index');
-    Route::get('/chat/fetch', [App\Http\Controllers\SupportChatController::class, 'fetch'])->name('chat.fetch');
-    Route::post('/chat/send', [App\Http\Controllers\SupportChatController::class, 'store'])->name('chat.store');
+// =========================================================================
+// 2. TOURS & EXPLORATION
+// =========================================================================
+Route::prefix('tours')->name('tours.')->group(function () {
+    Route::get('/', [TourController::class, 'index'])->name('index');
+    Route::get('/featured', [TourController::class, 'featured'])->name('featured');
+    Route::get('/category/{category}', [TourController::class, 'category'])->name('category');
+    Route::get('/{tour}', [TourController::class, 'show'])->name('show');
+    
+    // Ajax Interactivity
+    Route::post('/{tour}/check-availability', [TourController::class, 'checkAvailability'])->name('check-availability');
+    Route::post('/{tour}/calculate-price', [TourController::class, 'calculatePrice'])->name('calculate-price');
+    Route::post('/{tour}/like', [TourController::class, 'toggleLike'])->name('like');
 });
 
 
-// =====================
-// Admin Routes
-// =====================
+// =========================================================================
+// 3. BOOKING LIFECYCLE
+// =========================================================================
+Route::get('/tours/{tour}/book', [BookingController::class, 'create'])->name('bookings.create');
+Route::post('/bookings', [BookingController::class, 'store'])->name('bookings.store')->middleware(['throttle:bookings']);
+Route::get('/bookings/{bookingReference}', [BookingController::class, 'show'])->name('bookings.show');
+Route::post('/bookings/{bookingReference}/cancel', [BookingController::class, 'cancel'])->name('bookings.cancel');
+
+// Payment Processing (Stripe)
+Route::prefix('bookings/{bookingReference}/payment')->name('bookings.payment.')->group(function () {
+    Route::get('/', [PaymentController::class, 'payment'])->name('init');
+    Route::get('/success', [PaymentController::class, 'paymentSuccess'])->name('success');
+    Route::get('/cancel', [PaymentController::class, 'paymentCancel'])->name('cancel');
+});
+
+
+// =========================================================================
+// 4. CUSTOMER ACCOUNT AREA
+// =========================================================================
+Route::middleware(['auth', 'verified', 'profile.complete'])->group(function () {
+    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+    Route::get('/wishlist', [WishlistController::class, 'index'])->name('wishlist');
+    Route::get('/reviews', [DashboardController::class, 'reviews'])->name('reviews.index');
+    Route::get('/my-bookings', [BookingController::class, 'myBookings'])->name('my-bookings');
+
+    // Profile Management
+    Route::prefix('profile')->name('profile.')->group(function () {
+        Route::get('/', [ProfileController::class, 'edit'])->name('edit');
+        Route::patch('/', [ProfileController::class, 'update'])->name('update');
+        Route::patch('/customer', [ProfileController::class, 'updateCustomer'])->name('customer.update');
+        Route::delete('/', [ProfileController::class, 'destroy'])->name('destroy');
+    });
+
+    // Experience & Support
+    Route::prefix('chat')->name('chat.')->group(function () {
+        Route::get('/', [SupportChatController::class, 'index'])->name('index');
+        Route::get('/fetch', [SupportChatController::class, 'fetch'])->name('fetch');
+        Route::post('/send', [SupportChatController::class, 'store'])->name('store');
+    });
+});
+
+
+// =========================================================================
+// 5. TOUR GUIDE PORTAL
+// =========================================================================
+Route::prefix('guide')
+    ->name('guide.')
+    ->middleware(['auth', 'verified', 'guide'])
+    ->group(function () {
+        Route::get('/dashboard', [GuideAssignmentController::class, 'dashboard'])->name('dashboard');
+        Route::get('/assignments', [GuideAssignmentController::class, 'index'])->name('assignments.index');
+        Route::get('/assignments/{assignment}', [GuideAssignmentController::class, 'show'])->name('assignments.show');
+        Route::post('/assignments/{assignment}/accept', [GuideAssignmentController::class, 'accept'])->name('assignments.accept');
+        Route::get('/assignments/{assignment}/decline', [GuideAssignmentController::class, 'showDeclineForm'])->name('assignments.decline');
+        Route::post('/assignments/{assignment}/decline', [GuideAssignmentController::class, 'decline'])->name('assignments.decline.submit');
+});
+
+// Signed Url Routes for Quick Action (No Auth Required)
+Route::get('/guide/assignment/{assignment}', [GuideAssignmentController::class, 'show'])->name('guide.assignment.public.show');
+Route::get('/guide/assignment/{assignment}/accept', [GuideAssignmentController::class, 'accept'])->name('guide.assignment.public.accept');
+Route::get('/guide/assignment/{assignment}/decline', [GuideAssignmentController::class, 'showDeclineForm'])->name('guide.assignment.public.decline');
+
+
+// =========================================================================
+// 6. ADMINISTRATIVE CONTROL PANEL
+// =========================================================================
 Route::prefix('admin')
     ->name('admin.')
     ->middleware(['auth', 'admin'])
     ->group(function () {
 
-        // Dashboard
+        // Core Admin Dashboard
         Route::redirect('/', '/admin/dashboard');
-        Route::get('/dashboard', [AdminDashboardController::class, 'index'])
-            ->name('dashboard');
+        Route::get('/dashboard', [AdminDashboardController::class, 'index'])->name('dashboard');
+        Route::get('/analytics', [AdminDashboardController::class, 'analytics'])->name('analytics');
 
-        Route::get('/analytics', [AdminDashboardController::class, 'analytics'])
-            ->name('analytics');
-
-        // Tours Management
+        // Inventory: Tours & Locations
         Route::get('/tours/export', [AdminTourController::class, 'export'])->name('tours.export');
         Route::post('/tours/import', [AdminTourController::class, 'import'])->name('tours.import');
         Route::resource('tours', AdminTourController::class);
+        Route::post('/tours/{tour}/toggle-status', [AdminTourController::class, 'toggleStatus'])->name('tours.toggle-status');
+        Route::post('/tours/{tour}/toggle-featured', [AdminTourController::class, 'toggleFeatured'])->name('tours.toggle-featured');
+        Route::delete('/tours/{tour}/gallery/{index}', [AdminTourController::class, 'deleteGalleryImage'])->name('tours.delete-gallery-image');
 
-        Route::post('/tours/{tour}/toggle-status', [AdminTourController::class, 'toggleStatus'])
-            ->name('tours.toggle-status');
+        Route::get('/locations/export', [AdminParkLocationController::class, 'export'])->name('locations.export');
+        Route::post('/locations/import', [AdminParkLocationController::class, 'import'])->name('locations.import');
+        Route::resource('locations', AdminParkLocationController::class);
 
-        Route::post('/tours/{tour}/toggle-featured', [AdminTourController::class, 'toggleFeatured'])
-            ->name('tours.toggle-featured');
+        // Operations: Bookings & Guides
+        Route::get('/bookings/calendar', [AdminBookingController::class, 'calendar'])->name('bookings.calendar');
+        Route::get('/bookings/export', [AdminBookingController::class, 'export'])->name('bookings.export');
+        Route::resource('bookings', AdminBookingController::class)->only(['index', 'show']);
+        Route::post('/bookings/{booking}/confirm', [AdminBookingController::class, 'confirm'])->name('bookings.confirm');
+        Route::post('/bookings/{booking}/cancel', [AdminBookingController::class, 'cancel'])->name('bookings.cancel');
+        Route::post('/bookings/{booking}/complete', [AdminBookingController::class, 'complete'])->name('bookings.complete');
+        Route::post('/bookings/{booking}/update-price', [AdminBookingController::class, 'updatePrice'])->name('bookings.update-price');
 
-        Route::delete('/tours/{tour}/gallery/{index}', [AdminTourController::class, 'deleteGalleryImage'])
-            ->name('tours.delete-gallery-image');
+        Route::get('/guides/export', [AdminTourGuideController::class, 'export'])->name('guides.export');
+        Route::post('/guides/import', [AdminTourGuideController::class, 'import'])->name('guides.import');
+        Route::resource('guides', AdminTourGuideController::class);
 
-        // Bookings Management
-        Route::get('/bookings', [AdminBookingController::class, 'index'])
-            ->name('bookings.index');
+        // Feedback: Reviews & Testimonials
+        Route::resource('reviews', AdminReviewController::class)->only(['index', 'destroy']);
+        Route::post('/reviews/{review}/toggle-status', [AdminReviewController::class, 'toggleStatus'])->name('reviews.toggle-status');
+        Route::resource('testimonials', AdminTestimonialController::class)->only(['index', 'destroy']);
+        Route::post('/testimonials/{testimonial}/toggle-status', [AdminTestimonialController::class, 'toggleStatus'])->name('testimonials.toggle-status');
 
-        Route::get('/bookings/calendar', [AdminBookingController::class, 'calendar'])
-            ->name('bookings.calendar');
-
-        Route::get('/bookings/export', [AdminBookingController::class, 'export'])
-            ->name('bookings.export');
-
-        Route::get('/bookings/{booking}', [AdminBookingController::class, 'show'])
-            ->name('bookings.show');
-
-        Route::post('/bookings/{booking}/confirm', [AdminBookingController::class, 'confirm'])
-            ->name('bookings.confirm');
-
-        Route::post('/bookings/{booking}/cancel', [AdminBookingController::class, 'cancel'])
-            ->name('bookings.cancel');
-
-        Route::post('/bookings/{booking}/complete', [AdminBookingController::class, 'complete'])
-            ->name('bookings.complete');
-
-        Route::post('/bookings/{booking}/update-price', [AdminBookingController::class, 'updatePrice'])
-            ->name('bookings.update-price');
-
-        // Tour Guides Management
-        Route::get('/guides/export', [\App\Http\Controllers\Admin\TourGuideController::class, 'export'])->name('guides.export');
-        Route::post('/guides/import', [\App\Http\Controllers\Admin\TourGuideController::class, 'import'])->name('guides.import');
-        Route::resource('guides', \App\Http\Controllers\Admin\TourGuideController::class);
-
-        // Park Locations Management
-        Route::get('/locations/export', [\App\Http\Controllers\Admin\ParkLocationController::class, 'export'])->name('locations.export');
-        Route::post('/locations/import', [\App\Http\Controllers\Admin\ParkLocationController::class, 'import'])->name('locations.import');
-        Route::resource('locations', \App\Http\Controllers\Admin\ParkLocationController::class);
-
-        // Reviews & Testimonials
-        Route::resource('reviews', \App\Http\Controllers\Admin\ReviewController::class)->only(['index', 'destroy']);
-        Route::post('/reviews/{review}/toggle-status', [\App\Http\Controllers\Admin\ReviewController::class, 'toggleStatus'])->name('reviews.toggle-status');
-
-        Route::resource('testimonials', \App\Http\Controllers\Admin\TestimonialController::class)->only(['index', 'destroy']);
-        Route::post('/testimonials/{testimonial}/toggle-status', [\App\Http\Controllers\Admin\TestimonialController::class, 'toggleStatus'])->name('testimonials.toggle-status');
-
-        // Accommodations & Vehicles
-        Route::get('/accommodations/export', [\App\Http\Controllers\Admin\AccommodationController::class, 'export'])->name('accommodations.export');
-        Route::post('/accommodations/import', [\App\Http\Controllers\Admin\AccommodationController::class, 'import'])->name('accommodations.import');
-        Route::resource('accommodations', \App\Http\Controllers\Admin\AccommodationController::class);
-        
-        Route::get('/vehicle-types/export', [\App\Http\Controllers\Admin\VehicleTypeController::class, 'export'])->name('vehicle-types.export');
-        Route::post('/vehicle-types/import', [\App\Http\Controllers\Admin\VehicleTypeController::class, 'import'])->name('vehicle-types.import');
-        Route::resource('vehicle-types', \App\Http\Controllers\Admin\VehicleTypeController::class);
-        
-        Route::get('/vehicles/export', [\App\Http\Controllers\Admin\VehicleController::class, 'export'])->name('vehicles.export');
-        Route::post('/vehicles/import', [\App\Http\Controllers\Admin\VehicleController::class, 'import'])->name('vehicles.import');
-        Route::resource('vehicles', \App\Http\Controllers\Admin\VehicleController::class);
+        // Assets: Accommodations & Vehicles
+        Route::resource('accommodations', AdminAccommodationController::class);
+        Route::resource('vehicle-types', AdminVehicleTypeController::class);
+        Route::resource('vehicles', AdminVehicleController::class);
 
         // User Management
         Route::prefix('users')->name('users.')->group(function () {
-            Route::get('/admins', [\App\Http\Controllers\Admin\UserController::class, 'admins'])->name('admins');
-            Route::get('/customers', [\App\Http\Controllers\Admin\UserController::class, 'customers'])->name('customers');
-            Route::post('/{user}/promote', [\App\Http\Controllers\Admin\UserController::class, 'promote'])->name('promote');
-            Route::post('/{user}/demote', [\App\Http\Controllers\Admin\UserController::class, 'demote'])->name('demote');
+            Route::get('/admins', [AdminUserController::class, 'admins'])->name('admins');
+            Route::get('/customers', [AdminUserController::class, 'customers'])->name('customers');
+            Route::post('/{user}/promote', [AdminUserController::class, 'promote'])->name('promote');
+            Route::post('/{user}/demote', [AdminUserController::class, 'demote'])->name('demote');
         });
-        // Content Management (CMS)
-        Route::resource('cms-pages', App\Http\Controllers\Admin\CmsPageController::class);
-        Route::resource('cms-sections', App\Http\Controllers\Admin\CmsSectionController::class);
 
-        // Messages
-        Route::get('/messages', [App\Http\Controllers\Admin\MessageController::class, 'index'])->name('messages.index');
-        Route::get('/messages/{user}', [App\Http\Controllers\Admin\MessageController::class, 'show'])->name('messages.show');
-        Route::post('/messages/{user}', [App\Http\Controllers\Admin\MessageController::class, 'store'])->name('messages.store');
+        // Content & Communications
+        Route::resource('cms-pages', CmsPageController::class);
+        Route::resource('cms-sections', CmsSectionController::class);
+        Route::prefix('messages')->name('messages.')->group(function () {
+            Route::get('/', [MessageController::class, 'index'])->name('index');
+            Route::get('/{user}', [MessageController::class, 'show'])->name('show');
+            Route::post('/{user}', [MessageController::class, 'store'])->name('store');
+        });
 
-        // Billing & Security
-        Route::get('/billing', [App\Http\Controllers\Admin\BillingController::class, 'index'])->name('billing.index');
-        Route::get('/security', [App\Http\Controllers\Admin\SecurityController::class, 'index'])->name('security.index');
+        // System Settings, Security & Audit
+        Route::get('/billing', [BillingController::class, 'index'])->name('billing.index');
+        Route::get('/security', [SecurityController::class, 'index'])->name('security.index');
+        Route::get('/activity-logs', [ActivityLogController::class, 'index'])->name('activity-logs.index');
+        Route::get('/settings', [SettingsController::class, 'index'])->name('settings.index');
+        Route::post('/settings', [SettingsController::class, 'update'])->name('settings.update');
 
+        // Newsletter Management
+        Route::get('/newsletter', [\App\Http\Controllers\Admin\NewsletterController::class, 'index'])->name('newsletter.index');
+        Route::delete('/newsletter/{subscriber}', [\App\Http\Controllers\Admin\NewsletterController::class, 'destroy'])->name('newsletter.destroy');
+        Route::patch('/newsletter/{subscriber}/toggle', [\App\Http\Controllers\Admin\NewsletterController::class, 'toggle'])->name('newsletter.toggle');
+
+        // Community Story Moderation
+        Route::get('/community-stories', [\App\Http\Controllers\Admin\CommunityStoryController::class, 'index'])->name('community-stories.index');
+        Route::patch('/community-stories/{story}/approve', [\App\Http\Controllers\Admin\CommunityStoryController::class, 'approve'])->name('community-stories.approve');
+        Route::patch('/community-stories/{story}/reject', [\App\Http\Controllers\Admin\CommunityStoryController::class, 'reject'])->name('community-stories.reject');
+        Route::patch('/community-stories/{story}/toggle-featured', [\App\Http\Controllers\Admin\CommunityStoryController::class, 'toggleFeatured'])->name('community-stories.toggle-featured');
+        Route::delete('/community-stories/{story}', [\App\Http\Controllers\Admin\CommunityStoryController::class, 'destroy'])->name('community-stories.destroy');
     });
-
-
-// Social Auth
-Route::get('/auth/{provider}/redirect', [App\Http\Controllers\Auth\SocialAuthController::class, 'redirectToProvider'])
-    ->name('social.redirect');
-Route::get('/auth/{provider}/callback', [App\Http\Controllers\Auth\SocialAuthController::class, 'handleProviderCallback'])
-    ->name('social.callback');

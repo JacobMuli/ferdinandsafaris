@@ -12,14 +12,22 @@ class DashboardController extends Controller
         $user = Auth::user();
 
         // Redirect Admin to Admin Dashboard
-        if ($user->is_admin) {
+        if ($user->isAdmin()) {
             return redirect()->route('admin.dashboard');
         }
 
         $bookings = $user->customer ? $user->customer->bookings()->latest()->take(5)->get() : collect();
         $upcomingTrips = $user->customer ? $user->customer->bookings()->whereIn('status', ['confirmed', 'paid'])->where('tour_date', '>=', now())->count() : 0;
-        $pastTrips = $user->customer ? $user->customer->bookings()->where('sort_date', '<', now())->count() : 0; // Simplified logic, ideally check status
+        $pastTrips = $user->customer ? $user->customer->bookings()->where('tour_date', '<', now())->count() : 0; 
 
         return view('dashboard', compact('bookings', 'upcomingTrips', 'pastTrips'));
+    }
+
+    public function reviews()
+    {
+        $user = Auth::user();
+        $reviews = $user->customer ? $user->customer->reviews()->with('tour')->latest()->paginate(10) : collect();
+
+        return view('dashboard.reviews', compact('reviews'));
     }
 }

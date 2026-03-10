@@ -26,34 +26,48 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 
-<body class="bg-gray-100 font-sans antialiased" x-data="{ sidebarOpen: false }">
+<body class="bg-gray-100 font-sans antialiased" x-data="{ sidebarOpen: false, desktopSidebarOpen: true }">
 
-    <div class="flex min-h-screen">
+    <div class="flex flex-col min-h-screen">
 
-        <!-- Mobile Overlay -->
-        <div x-show="sidebarOpen" @click="sidebarOpen = false"
-            x-transition:enter="transition-opacity ease-linear duration-300" x-transition:enter-start="opacity-0"
-            x-transition:enter-end="opacity-100" x-transition:leave="transition-opacity ease-linear duration-300"
-            x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0"
-            class="fixed inset-0 bg-gray-900/80 z-30 md:hidden" style="display: none;"></div>
+        <!-- Topbar (Full Width) -->
+        <header class="fixed top-0 left-0 right-0 h-16 z-50 bg-gradient-to-r from-blue-900 to-emerald-600 shadow-lg">
+            @include('layouts.admin-topbar')
+        </header>
 
-        <!-- Sidebar -->
-        <aside
-            class="fixed top-0 left-0 h-screen w-64 bg-gradient-to-b from-blue-900 to-emerald-900 text-white z-40 hidden md:flex flex-col">
-            @include('layouts.admin-sidebar')
-        </aside>
+        <div class="flex flex-1 pt-16">
+            <!-- Mobile Overlay -->
+            <div x-show="sidebarOpen" @click="sidebarOpen = false"
+                x-transition:enter="transition-opacity ease-linear duration-300" x-transition:enter-start="opacity-0"
+                x-transition:enter-end="opacity-100" x-transition:leave="transition-opacity ease-linear duration-300"
+                x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0"
+                class="fixed inset-0 bg-gray-900/50 z-40 md:hidden" style="display: none;"></div>
 
-        <!-- Main wrapper -->
-        <div class="flex-1 md:ml-64 flex flex-col">
+            <!-- Sidebar (Desktop & Mobile) -->
+            <aside
+                x-show="desktopSidebarOpen || (window.innerWidth < 768 && sidebarOpen)"
+                x-transition:enter="transition ease-out duration-300"
+                x-transition:enter-start="-translate-x-full"
+                x-transition:enter-end="translate-x-0"
+                x-transition:leave="transition ease-in duration-300"
+                x-transition:leave-start="translate-x-0"
+                x-transition:leave-end="-translate-x-full"
+                @click.away="if(window.innerWidth < 768) sidebarOpen = false"
+                :class="{ 
+                    'fixed top-16 left-0 bottom-0 w-64 bg-gradient-to-b from-blue-900 to-emerald-900 text-white z-40 flex flex-col shadow-xl': true,
+                    'hidden md:flex': !desktopSidebarOpen,
+                    'flex': desktopSidebarOpen || sidebarOpen
+                }"
+                class="fixed top-16 left-0 bottom-0 w-64 bg-gradient-to-b from-blue-900 to-emerald-900 text-white z-40 flex flex-col shadow-xl">
+                @include('layouts.admin-sidebar')
+            </aside>
 
-            <!-- Topbar -->
-            <header
-                class="fixed top-0 left-0 right-0 md:left-64 h-16 z-30 bg-gradient-to-r from-blue-900 to-emerald-600 shadow">
-                @include('layouts.admin-topbar')
-            </header>
-
-            <!-- Content -->
-            <main class="pt-20 px-6 pb-10 max-w-[1600px] mx-auto w-full">
+            <!-- Main Content Area -->
+            <main 
+                class="flex-1 transition-all duration-300 ease-in-out pb-12 overflow-x-hidden min-h-[calc(100vh-64px)]"
+                :class="desktopSidebarOpen ? 'md:ml-64' : 'ml-0'">
+                
+                <div class="p-6 lg:p-10 max-w-[1600px] mx-auto w-full">
                 @if(session('success'))
                     <div class="mb-6 bg-emerald-100 text-emerald-800 px-4 py-3 rounded-lg shadow">
                         {{ session('success') }}

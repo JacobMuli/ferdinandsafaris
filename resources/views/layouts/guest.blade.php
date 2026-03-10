@@ -31,6 +31,9 @@
         <!-- Scripts -->
         @vite(['resources/css/app.css', 'resources/js/app.js'])
 
+        <!-- SEO Meta Tags -->
+        @stack('meta')
+
 
 
         <!-- Additional Styles -->

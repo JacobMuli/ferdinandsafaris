@@ -13,6 +13,7 @@ class DatabaseSeeder extends Seeder
     {
         $this->call([
             UserSeeder::class,
+            RoleSeeder::class,
             CmsSeeder::class,
             // Tours managed via Admin upload
             BookingSeeder::class,

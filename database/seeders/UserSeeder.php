@@ -14,18 +14,30 @@ class UserSeeder extends Seeder
      */
     public function run(): void
     {
-        // Admin Users
+        // Main Admin: Developer
         User::updateOrCreate(
             ['email' => 'jacobmwalughs@gmail.com'],
             [
-                'name' => 'Jacob Admin',
+                'name' => 'Jacob Mwalugho',
                 'password' => Hash::make('password'),
                 'email_verified_at' => now(),
+                'is_super_admin' => true,
                 'is_admin' => true,
                 'remember_token' => Str::random(10),
             ]
         );
 
-        User::factory()->count(5)->create();
+        // Main Admin: Owner
+        User::updateOrCreate(
+            ['email' => 'ferdimwalugho@hotmail.com'],
+            [
+                'name' => 'Ferdinand Mwalugho',
+                'password' => Hash::make('password'),
+                'email_verified_at' => now(),
+                'is_super_admin' => true,
+                'is_admin' => true,
+                'remember_token' => Str::random(10),
+            ]
+        );
     }
 }

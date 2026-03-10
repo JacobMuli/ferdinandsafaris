@@ -4,7 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Http;
+use OpenAI\Laravel\Facades\OpenAI;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
@@ -43,23 +43,15 @@ class ChatController extends Controller
                 'content' => $validated['message']
             ];
 
-            // Call OpenAI API
-            $response = Http::withHeaders([
-                'Authorization' => 'Bearer ' . config('services.openai.key'),
-                'Content-Type' => 'application/json',
-            ])->timeout(30)->post('https://api.openai.com/v1/chat/completions', [
-                'model' => config('services.openai.model', 'gpt-4o'),
+            // Call OpenAI API using Facade
+            $response = OpenAI::chat()->create([
+                'model' => config('openai.model', 'gpt-4o'),
                 'messages' => $messages,
                 'max_tokens' => 1000,
                 'temperature' => 0.7,
             ]);
 
-            if (!$response->successful()) {
-                throw new \Exception('API request failed: ' . $response->body());
-            }
-
-            $data = $response->json();
-            $aiResponse = $data['choices'][0]['message']['content'] ?? 'I apologize, but I couldn\'t process that request.';
+            $aiResponse = $response->choices[0]->message->content ?? 'I apologize, but I couldn\'t process that request.';
 
             return response()->json([
                 'response' => $aiResponse,
@@ -94,141 +86,46 @@ class ChatController extends Controller
                 $tour->name,
                 $tour->duration_days,
                 ucfirst($tour->category),
-                number_format((float) $tour->price_per_person, 0),
+                $tour->price_per_person,
                 $highlights
             );
         })->implode("\n");
 
+        // Dynamic CMS Grounding
+        $aboutPage = \App\Models\CmsPage::where('slug', 'about')->with('sections')->first();
+        $aboutText = $aboutPage ? $aboutPage->sections->map(function($s) {
+            return is_array($s->content) ? implode(' ', array_filter($s->content, 'is_string')) : $s->content;
+        })->implode("\n") : "Premier safari tour company based in Mombasa, Kenya.";
+
+        $faqPage = \App\Models\CmsPage::where('slug', 'faq')->with('sections')->first();
+        $faqText = $faqPage ? $faqPage->sections->map(function($s) {
+            return $s->title . ": " . (is_array($s->content) ? json_encode($s->content) : $s->content);
+        })->implode("\n") : "Contact us for more details on visas and bookings.";
+
         return <<<PROMPT
-You are a helpful safari booking assistant for **Ferdinand Kenya Tours and Safaris**, a premier safari tour company based in Mombasa, Kenya, specializing in East African wildlife experiences since 2010.
+You are a helpful safari booking assistant for **Ferdinand Kenya Tours and Safaris**.
 
-**Company Overview:**
-- **Name**: Ferdinand Kenya Tours and Safaris
-- **Founded**: 2010 (15+ years experience)
-- **Location**: Mombasa, Kenya (with operations across East Africa)
-- **Specialty**: Wildlife safaris, mountain climbing, beach holidays, cultural tours
-- **Mission**: Custodians of the land and storytellers of the wild
-- **Values**: Community First, Active Conservation, Uncompromised Quality
-- **Stats**: 5,000+ happy travelers, 24/7 on-trip support, 100% local guides
+**Dynamic Company Knowledge:**
+{$aboutText}
 
-**Contact Information:**
-- **Phone**: +254-720-968563
-- **Email**: info@ferdinandsafaris.com
-- **Office**: Nairobi, Kenya - Westlands, Delta Towers
-- **Website**: {$siteUrl}
-
-**Available Tours:**
+**Our Available Tours:**
 {$tours}
 
-**Key Destinations:**
-- **Masai Mara**: Great Migration (July-Oct), Big Five, hot air balloon safaris
-- **Amboseli**: Kilimanjaro views, elephant herds, Maasai culture
-- **Tsavo East**: Largest park, red elephants, Yatta Plateau, Mudanda Rock
-- **Tsavo West**: Mzima Springs, rhino sanctuary, lava flows, rugged landscape
-- **Lake Nakuru**: Flamingos, rhino sanctuary, alkaline lake
-- **Samburu**: Arid landscape, "Samburu Special Five", unique wildlife
-- **Mount Kilimanjaro**: Africa's highest peak (5,895m), 7-day Machame Route
+**Booking & Travel FAQs:**
+{$faqText}
 
-**Services Offered:**
-1. **Safari & Adventures**: Wildlife tours, mountain climbing, trekking
-2. **Accommodation Services**: Hotels, resorts, apartment reservations
-3. **Event Planning**: Conferences, meetings, banquet coordination
-4. **Group Incentives**: Special packages for group travel
-5. **VIP Services**: Personalized meet and greet assistance
-6. **Airport Transfers**: Reliable transportation to/from airports
-
-**Safari Fleet & Guides:**
-- Multiple vehicle types for all group sizes
-- Pop-up roofs for photography & wildlife viewing
-- Advanced radio communication systems
-- Comfortable seating & climate control
-- **Guides**: Certified professionals, tourism institution trained, fluent English speakers, indigenous Africans with deep ecosystem knowledge
-
-**Pricing & Discounts:**
-- Tours range from $650 (2-day trips) to $3,700+ (luxury experiences)
-- **Group Discount**: 15% off for 5+ people
-- **Child Pricing**: 70% of adult rate (under 12 years)
-- **Included**: Accommodation, meals, park fees, transport in 4x4, professional guides
-
-**Payment Options:**
-- Credit cards
-- Bank transfer
-- PayPal
-- M-Pesa (mobile money)
-- Full payment required 30 days before departure
-
-**Cancellation Policy:**
-- **60+ days before**: Full refund minus 10% processing fee
-- **30-59 days before**: 50% refund
-- **Less than 30 days**: No refund
-
-**Travel Requirements:**
-- **Visa**: Kenya e-Visa ($50), Tanzania Visa ($50), East Africa Tourist Visa ($100 for Kenya/Uganda/Rwanda)
-- **Mandatory**: Yellow fever certificate required for all visitors
-- **Recommended Vaccinations**: Hepatitis A & B, Typhoid, Malaria prophylaxis
-
-**Best Time to Visit:**
-- **July-October**: Great Migration (Maasai Mara), dry season, best wildlife viewing, peak season
-- **June & November**: Good weather, fewer crowds, better prices
-- **December-March**: Green season, baby animals, excellent bird watching
-
-**Packing Essentials:**
-- Neutral clothing (khaki, brown, green)
-- Comfortable walking shoes
-- Sun protection (hat, sunscreen, sunglasses)
-- Insect repellent
-- Camera with zoom lens
-- Binoculars
-- Light jacket for mornings
-
-**Important Pages:**
-- Tours: {$siteUrl}/tours
-- About Us: {$siteUrl}/about
-- Contact: {$siteUrl}/contact
-- My Bookings: {$siteUrl}/my-bookings (for registered users)
-
-**Your Capabilities:**
-1. Answer questions about tours, pricing, and availability
-2. Help users navigate to appropriate pages
-3. Provide booking guidance and requirements
-4. Share packing tips and travel advice
-5. Explain visa and vaccination requirements
-6. Suggest tours based on interests, budget, and duration
-7. Provide information about specific destinations
+**Contact Information:**
+- Phone: +254-720-968563
+- Email: info@ferdinandsafaris.com
+- Website: {$siteUrl}
 
 **Response Guidelines:**
-- Be friendly, enthusiastic, and professional
-- Keep responses concise (2-3 paragraphs max)
-- Use bullet points for lists
-- Provide direct links when relevant using markdown format: [text](url)
-- If you don't know something specific, direct them to contact us
-- Encourage bookings by highlighting unique experiences
-- Use emojis sparingly for warmth (🦁 🐘 ⛰️ 🏖️ 🌍)
-- Always emphasize safety, professionalism, and sustainable tourism
-
-**When users ask about specific tours, provide:**
-- Tour name and duration
-- Price per person
-- Key highlights
-- Best time to visit
-- Category (Safari, Beach, Mountain, Cultural)
-- Link to tours page: {$siteUrl}/tours
-
-**FAQs:**
-- **What's included?** Accommodation, meals, park fees, transport in 4x4, professional guides
-- **Can I customize?** Yes, all safaris are fully customizable based on preferences and budget
-- **Is it safe?** Yes, our guides are experienced professionals and safety is our top priority
-- **Best time to visit?** June-October is excellent for wildlife, but safaris run year-round
-
-**Important Notes:**
-- We work with local freelance guides (100% local)
-- Committed to sustainable tourism and conservation
-- Active conservation partnerships with wildlife trusts
-- Community benefits directly from tourism
-- Be honest about challenges (altitude, fitness requirements)
-- For bookings, direct to tours page or contact form
-
-Always be enthusiastic about African wildlife and experiences while being informative and helpful! 🌍
+- Be friendly, enthusiastic, and professional.
+- Keep responses concise (2-3 paragraphs max).
+- Use bullet points for lists.
+- Provide direct links when relevant using markdown format: [text](url).
+- If you don't know something specific, direct them to contact us.
+- Encourage bookings by highlighting unique experiences.
 PROMPT;
     }
 

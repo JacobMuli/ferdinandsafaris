@@ -85,18 +85,163 @@
                 </button>
             </div>
 
-            <!-- CTA -->
-            <div class="mt-8 text-center bg-white  rounded-3xl p-8 md:p-12 shadow-lg border border-gray-100 max-w-screen-xl mx-auto">
-                <h2 class="text-3xl font-bold text-emerald-800  mb-4">
-                    Ready to Join Our Community?
-                </h2>
-                <p class="text-lg text-gray-600  mb-8 max-w-2xl mx-auto">
-                    Let us help you create your own unforgettable safari story.
-                </p>
-                <a href="{{ route('contact') }}" class="inline-block bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-8 py-4 rounded-full shadow-lg hover:shadow-xl transition transform hover:-translate-y-1">
-                    Plan Your Safari
-                </a>
+        <!-- Photo Gallery (UGC Grid) -->
+        @php
+            $stories = \App\Models\CommunityStory::where('is_approved', true)->latest()->take(12)->get();
+        @endphp
+
+        @if($stories->count() > 0)
+        <div class="w-full px-4 md:px-12 py-16 bg-white">
+            <div class="max-w-screen-xl mx-auto text-center mb-12">
+                <h2 class="text-3xl font-bold text-gray-900 mb-4">Guest Perspective Gallery</h2>
+                <div class="h-1 w-20 bg-emerald-500 mx-auto"></div>
+            </div>
+            
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                @foreach($stories as $story)
+                    @if(isset($story->images[0]))
+                        <div class="relative group aspect-square overflow-hidden rounded-xl cursor-pointer">
+                            <img src="{{ asset('storage/' . $story->images[0]) }}" alt="{{ $story->title }}" class="w-full h-full object-cover transform group-hover:scale-110 transition duration-700">
+                            <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition flex items-center justify-center p-4">
+                                <p class="text-white text-center text-sm font-medium">{{ $story->title }}</p>
+                            </div>
+                        </div>
+                    @endif
+                @endforeach
             </div>
         </div>
+        @endif
+
+        @auth
+        <!-- Share Your Story Form -->
+        <div id="share-story" class="w-full px-4 md:px-12 py-24 bg-gray-900 relative">
+            <div class="absolute inset-0 pattern-grid-lg opacity-5"></div>
+            <div class="max-w-3xl mx-auto relative z-10 bg-white p-8 md:p-12 rounded-3xl shadow-2xl">
+                <div class="text-center mb-12">
+                    <span class="text-emerald-600 font-bold uppercase tracking-widest text-sm mb-2 block">Tell Your Tale</span>
+                    <h2 class="text-3xl md:text-4xl font-extrabold text-gray-900 mb-4">Share Your Safari Experience</h2>
+                    <p class="text-gray-600">Help others discover the magic of Africa. Upload your photos and share your story.</p>
+                </div>
+
+                <form id="storyForm" class="space-y-6" enctype="multipart/form-data">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">Story Title</label>
+                            <input type="text" name="title" required placeholder="e.g. My Serengeti Sunrise"
+                                class="w-full px-5 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-2">Upload Photos (Max 5)</label>
+                            <input type="file" name="images[]" multiple accept="image/*"
+                                class="w-full px-5 py-2.5 rounded-xl border border-gray-200 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-emerald-50 file:text-emerald-700 hover:file:bg-emerald-100 transition">
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">Write Your Story</label>
+                        <textarea name="content" rows="6" required placeholder="Describe your unforgettable moments..."
+                            class="w-full px-5 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition"></textarea>
+                    </div>
+
+                    <div class="flex items-center justify-between">
+                        <p class="text-xs text-gray-400 max-w-xs">By submitting, you agree to allow Ferdinand Safaris to feature your content on our platform.</p>
+                        <button type="submit" class="bg-emerald-600 text-white px-10 py-4 rounded-full font-bold shadow-lg hover:bg-emerald-700 transition transform hover:-translate-y-1 active:scale-95 flex items-center gap-3">
+                            <span>Publish Story</span>
+                            <i class="fas fa-paper-plane"></i>
+                        </button>
+                    </div>
+                </form>
+                <div id="storyMessage" class="mt-6 p-4 rounded-xl hidden text-center font-medium"></div>
+            </div>
+        </div>
+        @else
+        <!-- Story Call to Action for Guests -->
+        <div class="w-full px-4 md:px-12 py-24 bg-emerald-900 text-white text-center">
+            <h2 class="text-3xl font-bold mb-4">Have a Story to Tell?</h2>
+            <p class="text-emerald-100 mb-8 max-w-2xl mx-auto">Login to your account to share your safari photos and experiences with our community.</p>
+            <div class="flex justify-center gap-4">
+                <a href="{{ route('login') }}" class="bg-white text-emerald-800 px-8 py-4 rounded-full font-bold hover:bg-emerald-50 transition">Login to Share</a>
+                <a href="{{ route('register') }}" class="bg-emerald-700 border border-emerald-500 text-white px-8 py-4 rounded-full font-bold hover:bg-emerald-600 transition">Create Account</a>
+            </div>
+        </div>
+        @endauth
+
+        <!-- CTA -->
+        <div class="mt-8 text-center bg-white rounded-3xl p-8 md:p-12 shadow-lg border border-gray-100 max-w-screen-xl mx-auto mb-16">
+            <h2 class="text-3xl font-bold text-emerald-800 mb-4">
+                Ready to Join Our Community?
+            </h2>
+            <p class="text-lg text-gray-600 mb-8 max-w-2xl mx-auto">
+                Let us help you create your own unforgettable safari story.
+            </p>
+            <a href="{{ route('contact') }}" class="inline-block bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-8 py-4 rounded-full shadow-lg hover:shadow-xl transition transform hover:-translate-y-1">
+                Plan Your Safari
+            </a>
+        </div>
+
+        <script>
+            // Newsletter Handling
+            const newsletterForm = document.getElementById('newsletterForm');
+            if (newsletterForm) {
+                newsletterForm.addEventListener('submit', async (e) => {
+                    e.preventDefault();
+                    const email = document.getElementById('newsletterEmail').value;
+                    const messageEl = document.getElementById('newsletterMessage');
+                    
+                    try {
+                        const response = await fetch('{{ route('newsletter.subscribe') }}', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                            },
+                            body: JSON.stringify({ email })
+                        });
+                        
+                        const data = await response.json();
+                        messageEl.textContent = data.message;
+                        messageEl.className = `mt-4 text-sm font-medium ${data.success ? 'text-emerald-400' : 'text-red-400'}`;
+                        messageEl.classList.remove('hidden');
+                        
+                        if (data.success) newsletterForm.reset();
+                    } catch (error) {
+                        messageEl.textContent = 'Something went wrong. Please try again.';
+                        messageEl.className = 'mt-4 text-sm font-medium text-red-400';
+                        messageEl.classList.remove('hidden');
+                    }
+                });
+            }
+
+            // Story Submission Handling
+            const storyForm = document.getElementById('storyForm');
+            if (storyForm) {
+                storyForm.addEventListener('submit', async (e) => {
+                    e.preventDefault();
+                    const formData = new FormData(storyForm);
+                    const messageEl = document.getElementById('storyMessage');
+                    
+                    try {
+                        const response = await fetch('{{ route('community.stories.store') }}', {
+                            method: 'POST',
+                            headers: {
+                                'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                            },
+                            body: formData
+                        });
+                        
+                        const data = await response.json();
+                        messageEl.textContent = data.message;
+                        messageEl.className = `mt-6 p-4 rounded-xl text-center font-medium ${data.success ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-700'}`;
+                        messageEl.classList.remove('hidden');
+                        
+                        if (data.success) storyForm.reset();
+                    } catch (error) {
+                        messageEl.textContent = 'Something went wrong. Please try again.';
+                        messageEl.className = 'mt-6 p-4 rounded-xl bg-red-50 text-red-700 text-center font-medium';
+                        messageEl.classList.remove('hidden');
+                    }
+                });
+            }
+        </script>
     </div>
 </x-guest-layout>

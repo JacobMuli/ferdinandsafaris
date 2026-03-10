@@ -1,4 +1,10 @@
 <x-guest-layout>
+    @push('meta')
+        <title>About Ferdinand Safaris - Expert Led African Adventures</title>
+        <meta name="description" content="Discover Ferdinand Safaris, led by Founder & Lead Expert Guide Ferdinand. 15+ years of personal field experience creating unforgettable, KATO-certified safari experiences.">
+        <meta property="og:title" content="About Us | Ferdinand Safaris">
+        <meta property="og:description" content="Led by Founder & Lead Expert Guide Ferdinand, we offer 15+ years of personal field experience and KATO-certified professional guides.">
+    @endpush
     <div class="bg-white  overflow-hidden">
 
         @php
@@ -147,9 +153,10 @@
                         <h2 class="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
                             Ferdinand Kenya Tours and Safaris
                         </h2>
-                        <p class="text-lg text-gray-600 leading-relaxed max-w-3xl mx-auto">
-                            A premier travel company based in Mombasa, Kenya, specializing in creating unforgettable safari experiences across East Africa with professional service, deep local knowledge, and passion for wildlife conservation.
+                        <p class="text-lg text-gray-600 leading-relaxed max-w-3xl mx-auto italic font-medium">
+                            "Africa is my home, and its wild pulse is my life's work. At Ferdinand Safaris, we don't just guide you; we share a part of our soul with every traveler who joins us."
                         </p>
+                        <div class="mt-4 font-black text-emerald-700 uppercase tracking-widest text-sm">— Ferdinand, Founder & Lead Expert Guide</div>
                     </div>
                 </div>
             </div>
@@ -275,8 +282,8 @@
                                 <h2 class="text-2xl md:text-3xl font-bold text-gray-900">Expert Guides</h2>
                             </div>
 
-                            <p class="text-gray-700 mb-8 leading-relaxed">
-                                Our English-speaking guides are indigenous Africans with extensive knowledge of Kenya's flora and fauna, highly trained through Kenya's tourism institutions.
+                             <p class="text-gray-700 mb-8 leading-relaxed">
+                                Led personally by our Founder & Lead Expert Guide, **Ferdinand**, who brings over **15 years of personal field experience** to every itinerary. Our supporting guides are indigenous professionals, highly trained and certified through Kenya's premier tourism institutions.
                             </p>
 
                             <div class="grid gap-4">
