@@ -12,12 +12,19 @@ Ferdinand Safaris is a luxury safari booking and management platform built with 
 
 ## Prerequisites
 
+### Local Development
+
 - PHP 8.2+
 - Node.js & NPM
 - Composer
 - MySQL Database
+- Redis (Optional but recommended)
 
-## Installation & Setup
+### Server (Production)
+
+See the [Deployment Checklist](deployment_checklist.md) for full production requirements and setup.
+
+## Local Development Setup
 
 1. **Clone the repository:**
 
@@ -35,20 +42,45 @@ Ferdinand Safaris is a luxury safari booking and management platform built with 
    ```
 
 3. **Configure Environment Variables:**
+
    Update your `.env` file with necessary credentials for:
    - OpenAI (API Key)
    - Stripe (Public/Secret Keys)
    - Database connection
 
-## Development
+4. **Start Development Environment:**
 
-To start the development server, queue listener, logs, and Vite watcher simultaneously, run:
+   To start the development server, queue listener, logs, and Vite watcher simultaneously, run:
 
-```bash
-npm run dev
-```
+   ```bash
+   npm run dev
+   ```
 
 The application will be accessible at `http://localhost:8000`.
+
+## Server Deployment
+
+For production deployment, we provide a dedicated [Deployment Checklist](deployment_checklist.md) and a deployment script.
+
+### Automated Deployment
+
+If your server is already configured, you can use the provided script:
+
+```bash
+./deploy.sh
+```
+
+### Manual Deployment Steps
+
+Briefly:
+
+1. `composer install --no-dev --optimize-autoloader`
+
+2. `npm install && npm run build`
+
+3. `php artisan migrate --force`
+
+4. `php artisan optimize`
 
 ## Testing
 
